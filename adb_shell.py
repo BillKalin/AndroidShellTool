@@ -6,30 +6,62 @@ __datetime__='2016.8.17'
 import os,shutil
 
 class Command(object):
-    def runCommand(self, cmd, error_msg='run command error!!!'):
-        if 1 <= cmd <= 9:
-            if not self.__checkAdbExe():
-                print('adb.exe or AdbWinApi.dll lost !!')
-                return
-        if cmd == 1:
+
+    def __init__(self, cmd_type):
+        if not isinstance(cmd_type, int) or 0 >= cmd_type:
+            raise ValueError('cmd_type is error')
+        self.__cmd_type = cmd_type
+        if cmd_type == 1:
+            name = 'adb shell'
+        elif cmd_type == 2:
+            name = 'adb reboot'
+        elif cmd_type == 3:
+            name = 'adb devices'
+        elif cmd_type == 4:
+            name = 'show installed apps'
+        elif cmd_type == 5:
+            name = 'adb install app'
+        elif cmd_type == 6:
+            name = 'adb uninstall app'
+        elif cmd_type == 7:
+            name = 'clear app data'
+        elif cmd_type == 8:
+            name = 'force stop app'
+        elif cmd_type == 9:
+            name = 'dump activity'
+        elif cmd_type == 10:
+            name = 'dump windows'
+        elif cmd_type == 11:
+            name = 'decode apk'
+        else:
+            raise ValueError('cmd type error !!!')
+        self.__name = name
+
+    def getCmdName(self):
+        return self.__name;
+
+    def runCommand(self, error_msg='run command error!!!'):
+        if self.__cmd_type == 1:
             self.__execAdbShell()
-        elif cmd == 2:
+        elif self.__cmd_type == 2:
+            self.__execAdbReboot()
+        elif self.__cmd_type == 3:
             self.__execAdbDevices()
-        elif cmd == 3:
+        elif self.__cmd_type == 4:
             self.__execAdbShowAppPkgs()
-        elif cmd == 4:
+        elif self.__cmd_type == 5:
             self.__execInstallApp()
-        elif cmd == 5:
+        elif self.__cmd_type == 6:
             self.__execUninstallApp()
-        elif cmd == 6:
+        elif self.__cmd_type == 7:
             self.__execClearAppData()
-        elif cmd == 7:
+        elif self.__cmd_type == 8:
             self.__execForceStopApp()
-        elif cmd == 8:
+        elif self.__cmd_type == 9:
             self.__execDumpSysActivity()
-        elif cmd == 9:
+        elif self.__cmd_type == 10:
             self.__execDumpSysWindow()
-        elif cmd == 10:
+        elif self.__cmd_type == 11:
             self.__execDecodeApk()
         else:
             print(error_msg)
@@ -44,6 +76,9 @@ class Command(object):
 
     def __execAdbShell(self):
         os.system('adb shell')
+
+    def __execAdbReboot(self):
+        os.system('adb reboot')
 
     def __execAdbDevices(self):
         os.system('adb devices')
@@ -129,17 +164,13 @@ class Command(object):
                 print('apktool.jar is not exists')
 
 if __name__ == '__main__':
-    tips = ['Please input number listed below:']
-    tips.append('adb shell')
-    tips.append('adb devices')
-    tips.append('show installed apps')
-    tips.append('adb install app')
-    tips.append('adb uninstall app')
-    tips.append('clear app data')
-    tips.append('force stop app')
-    tips.append('dump activity')
-    tips.append('dump windows')
-    tips.append('apk decode')
+    tips = list()
+    tips.append('Please input number listed below:')
+    cmdList = {}
+    for i in range(1, 12):
+        cm = Command(i)
+        cmdList[i] = cm
+        tips.append(cm.getCmdName())
 
     index = 0
     for tip in tips:
@@ -149,13 +180,16 @@ if __name__ == '__main__':
             print(tip)
         index = index+1
 
-    cmd = Command()
-    error_msg = 'please input number 1-%d'%(len(tips)-1)
+    error_msg = 'please input number 1-%d'%(len(cmdList))
     input_number = input('input command number: ')
     if input_number:
             try :
                 input_number = int(input_number)
-                cmd.runCommand(input_number, error_msg)
+                if input_number <= 0 or input_number > len(cmdList):
+                    print(error_msg)
+                else:
+                    c = cmdList[input_number]
+                    c.runCommand()
             except ValueError as i:
                 print(error_msg)
     else:
