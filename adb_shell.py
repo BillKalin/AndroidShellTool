@@ -1,9 +1,10 @@
+#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
 __author__='BillKalin'
 __datetime__='2016.8.17'
 
-import os,shutil
+import os,shutil,zipfile
 
 class Command(object):
 
@@ -33,6 +34,8 @@ class Command(object):
             name = 'dump windows'
         elif cmd_type == 11:
             name = 'decode apk'
+        elif cmd_type == 12:
+            name = 'decode dex'
         else:
             raise ValueError('cmd type error !!!')
         self.__name = name
@@ -63,6 +66,8 @@ class Command(object):
             self.__execDumpSysWindow()
         elif self.__cmd_type == 11:
             self.__execDecodeApk()
+        elif self.__cmd_type == 12:
+            self.__execDecodeDex()
         else:
             print(error_msg)
 
@@ -99,7 +104,10 @@ class Command(object):
     def __execInstallApp(self):
         pkg = input('input apk absolute path : ')
         if pkg:
-           os.system('adb install -r %s'%pkg)
+            if str(pkg).endswith('.apk') and os.path.exists(pkg):
+                os.system('adb install -r %s'%pkg)
+            else:
+                print('apk does not exists')
         else:
            print('apk does not exists')
 
@@ -163,11 +171,59 @@ class Command(object):
             else:
                 print('apktool.jar is not exists')
 
+    def __execDecodeDex(self):
+        print("start decode .dex file ...")
+        jar_dir = os.path.abspath('.')
+        source_apk = jar_dir + '\\source_apk\\'
+        output_dex_dir = jar_dir + '\\decoded_dex\\'
+        d2jPath = jar_dir + '\\dextool\\d2j-dex2jar'
+        if not os.path.exists(source_apk):
+            os.mkdir(source_apk)
+        if not os.path.exists(output_dex_dir):
+            os.mkdir(output_dex_dir)
+        files = os.listdir(source_apk)
+        if len(files) == 0:
+            print('no apk to decode !!')
+            return None
+        tempDex = output_dex_dir + '\\temp\\'
+        print('create temp dir to put classes.dex file in')
+        if not os.path.exists(tempDex):
+            os.mkdir(tempDex)
+
+        for f in os.listdir(source_apk):
+            if not os.path.isfile(source_apk + "\\" + f):
+                continue
+            f_name = f.split('.')
+            if not f.endswith('.apk'):
+                continue
+            tempFileName =  f_name[0]+'.zip'
+            #copy apk and rename it to zip file
+            shutil.copy(os.path.join(source_apk,f), os.path.join(tempDex, tempFileName))
+
+            tempzip = zipfile.ZipFile(os.path.join(tempDex, tempFileName), 'r')
+            for zf in tempzip.namelist():
+                if zf.endswith('.dex'):
+                    dexFilePath = output_dex_dir + f_name[0]
+                    if not os.path.exists(dexFilePath):
+                        os.mkdir(dexFilePath)
+                    else:
+                        shutil.rmtree(dexFilePath)
+                        os.mkdir(dexFilePath)
+                    f = open(os.path.join(dexFilePath, zf), 'wb')
+                    f.write(tempzip.read(zf))
+                    f.close()
+                    ''' start decode dex file'''
+                    os.system(d2jPath + ' -o ' + os.path.join(dexFilePath, zf.replace('.dex','.jar')) + ' ' + os.path.join(dexFilePath, zf) )
+            tempzip.close()
+        print('delete temp files')
+        if os.path.exists(tempDex):
+            shutil.rmtree(tempDex)
+
 if __name__ == '__main__':
     tips = list()
     tips.append('Please input number listed below:')
     cmdList = {}
-    for i in range(1, 12):
+    for i in range(1, 13):
         cm = Command(i)
         cmdList[i] = cm
         tips.append(cm.getCmdName())
