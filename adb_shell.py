@@ -199,21 +199,20 @@ class Command(object):
             tempFileName =  f_name[0]+'.zip'
             #copy apk and rename it to zip file
             shutil.copy(os.path.join(source_apk,f), os.path.join(tempDex, tempFileName))
-
+            dexFilePath = output_dex_dir + f_name[0]
+            if not os.path.exists(dexFilePath):
+                os.mkdir(dexFilePath)
+            else:
+                shutil.rmtree(dexFilePath)
+                os.mkdir(dexFilePath)
             tempzip = zipfile.ZipFile(os.path.join(tempDex, tempFileName), 'r')
             for zf in tempzip.namelist():
                 if zf.endswith('.dex'):
-                    dexFilePath = output_dex_dir + f_name[0]
-                    if not os.path.exists(dexFilePath):
-                        os.mkdir(dexFilePath)
-                    else:
-                        shutil.rmtree(dexFilePath)
-                        os.mkdir(dexFilePath)
                     f = open(os.path.join(dexFilePath, zf), 'wb')
                     f.write(tempzip.read(zf))
                     f.close()
                     ''' start decode dex file'''
-                    os.system(d2jPath + ' -o ' + os.path.join(dexFilePath, zf.replace('.dex','.jar')) + ' ' + os.path.join(dexFilePath, zf) )
+                    os.system(d2jPath + ' -o ' + os.path.join(dexFilePath, zf.replace('.dex','.jar')) + ' ' + os.path.join(dexFilePath, zf))
             tempzip.close()
         print('delete temp files')
         if os.path.exists(tempDex):
